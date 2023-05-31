@@ -48,7 +48,6 @@ async function getBranchFromPRNumber(octokit, owner, repo, pr_number) {
             repo: repo,
             pull_number: pr_number
         })
-    console.log(response)
     return {branch: response.data.head.ref, sha: response.data.head.sha};
 }
 

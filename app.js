@@ -22,17 +22,21 @@ module.exports = (app, { getRouter }) => {
   app.on(["pull_request.opened", "pull_request.synchronize"], pullRequestOpened);
 
   async function pullRequestOpened(context) {
-
+    console.log("[START] [pullRequestOpened] Invoke")
     const branch_info =  await pull_request.getBranchFromPRNumber(context.octokit, "arangodb", "docs-hugo", context.payload.pull_request.number)
     if (branch_info == undefined || branch_info.branch == undefined) {
-      app.log.info("[ERROR] [pullRequestOpened] branch_info undefined")
+      console.log("[ERROR] [pullRequestOpened] branch_info undefined")
       pull_request.createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.pull_request.number, "There was an error triggering checks!")
       return
     }
 
     ci_params = {"workflow": "plain-build"}
     let pipeline_id = await circleci.triggerCircleCIPipeline(branch_info.branch, ci_params)
-    app.log.info("PIPELINE ID " + pipeline_id)
+    console.log("PIPELINE ID " + pipeline_id)
+    if (pipeline_id == undefined) {
+      pull_request.createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.pull_request.number, "There was an error triggering checks!")
+      return
+    }
 
     // let jobs = await circleci.getPipelineJobs(pipeline_id)
     // for (let job of jobs) {

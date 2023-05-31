@@ -62,7 +62,7 @@ async function triggerCircleCIPipeline(branch, params) {
 
     let response = await fetch('https://circleci.com/api/v2/project/gh/arangodb/docs-hugo/pipeline', {
         method: 'POST',
-        headers: {'content-type': 'application/json', 'Circle-Token': "token"},
+        headers: {'content-type': 'application/json', 'Circle-Token': process.env.CIRCLECI_TOKEN},
         body: JSON.stringify({branch: branch, parameters: params}),
     })
     
@@ -76,7 +76,7 @@ async function getPipelineJobs(pipeline_id) {
 
     let workflow = await fetch('https://circleci.com/api/v2/pipeline/'+pipeline_id+'/workflow', {
         method: 'GET',
-        headers: {'content-type': 'application/json', 'Circle-Token': "token"},
+        headers: {'content-type': 'application/json', 'Circle-Token': process.env.CIRCLECI_TOKEN},
     })
     
     let data = await workflow.json();
@@ -86,7 +86,7 @@ async function getPipelineJobs(pipeline_id) {
 
     let jobs = await fetch('https://circleci.com/api/v2/workflow/'+workflow_id+'/job', {
         method: 'GET',
-        headers: {'content-type': 'application/json', 'Circle-Token': "token"},
+        headers: {'content-type': 'application/json', 'Circle-Token': process.env.CIRCLECI_TOKEN},
     })
     
     let jobsData = await jobs.json();

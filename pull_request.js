@@ -28,8 +28,13 @@ async function parsePRUpstream(line, octokit) {
     if (line.replace(/\s/g,'') == "") return ""
 
     if (line.includes("https://")) {
+      console.log("Parse PR Upstream ")
+
       pr_number = line.match(/\d+/gm);
-      return await getBranchFromPRNumber(octokit, "arangodb", "arangodb", pr_number).branch
+      console.log(pr_number)
+      var branch_info = await getBranchFromPRNumber(octokit, "arangodb", "arangodb", pr_number)
+      console.log(branch_info.branch)
+      return branch_info.branch
     }
     
     return line

@@ -19,22 +19,22 @@ module.exports = (app, { getRouter }) => {
 
   
   app.on(["issue_comment.created"], pullRequestComment);
-  // app.on(["pull_request.opened", "pull_request.synchronize"], pullRequestOpened);
+  app.on(["pull_request.opened", "pull_request.synchronize"], pullRequestOpened);
 
-  // async function pullRequestOpened(context) {
-  //   const branch_info =  await pull_request.getBranchFromPRNumber(context.octokit, "arangodb", "docs-hugo", context.payload.pull_request.number)
-  //   console.log(branch_info)
+  async function pullRequestOpened(context) {
+    const branch_info =  await pull_request.getBranchFromPRNumber(context.octokit, "arangodb", "docs-hugo", context.payload.pull_request.number)
+    console.log(branch_info)
 
-  //   ci_params = {"workflow": "plain-build"}
-  //   let pipeline_id = await circleci.triggerCircleCIPipeline(branch_info.branch, ci_params)
-  //   app.log.info("PIPELINE ID " + pipeline_id)
+    ci_params = {"workflow": "plain-build"}
+    let pipeline_id = await circleci.triggerCircleCIPipeline(branch_info.branch, ci_params)
+    app.log.info("PIPELINE ID " + pipeline_id)
 
-  //   let jobs = await circleci.getPipelineJobs(pipeline_id)
-  //   for (let job of jobs) {
-  //     circleci.createJobCheck(job, branch_info)
-  //     app.log.info("check created")
-  //   }
-  // }
+    // let jobs = await circleci.getPipelineJobs(pipeline_id)
+    // for (let job of jobs) {
+    //   // circleci.createJobCheck(job, branch_info)
+    //   // app.log.info("check created")
+    // }
+  }
 
 
 

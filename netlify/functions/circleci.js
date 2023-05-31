@@ -30,6 +30,7 @@ exports.handler = async function (event, context) {
     });
 
     if (event.headers["docs-webhook-event"] == "scheduled-create-pr") {
+        console.log("[CIRCLECI-WEBHOOK] [scheduled-create-pr] received")
         pull_request.createPR(octokit)
     }
 

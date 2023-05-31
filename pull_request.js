@@ -73,4 +73,5 @@ async function createPR(octokit) {
 exports.parsePRDescription = parsePRDescription
 exports.parsePRUpstream = parsePRUpstream
 exports.getBranchFromPRNumber = getBranchFromPRNumber
+exports.createPRComment = createPRComment
 exports.createPR = createPR

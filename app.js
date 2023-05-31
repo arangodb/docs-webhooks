@@ -73,11 +73,11 @@ module.exports = (app, { getRouter }) => {
       let pipeline_id = await circleci.triggerCircleCIPipeline(branch_info.branch, ci_params)
       app.log.info("PIPELINE ID " + pipeline_id)
 
-      let jobs = await circleci.getPipelineJobs(pipeline_id)
-      for (let job of jobs) {
-        // circleci.createJobCheck(job, branch_info)
-        // app.log.info("check created")
-      }
+      // let jobs = await circleci.getPipelineJobs(pipeline_id)
+      // for (let job of jobs) {
+      //   // circleci.createJobCheck(job, branch_info)
+      //   // app.log.info("check created")
+      // }
     }
   }
 

@@ -22,8 +22,13 @@ module.exports = (app, { getRouter }) => {
   app.on(["pull_request.opened", "pull_request.synchronize"], pullRequestOpened);
 
   async function pullRequestOpened(context) {
+
     const branch_info =  await pull_request.getBranchFromPRNumber(context.octokit, "arangodb", "docs-hugo", context.payload.pull_request.number)
-    console.log(branch_info)
+    if (branch_info == undefined || branch_info.branch == undefined) {
+      app.log.info("[ERROR] [pullRequestOpened] branch_info undefined")
+      pull_request.createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.pull_request.number, "There was an error triggering checks!")
+      return
+    }
 
     ci_params = {"workflow": "plain-build"}
     let pipeline_id = await circleci.triggerCircleCIPipeline(branch_info.branch, ci_params)
@@ -59,7 +64,7 @@ module.exports = (app, { getRouter }) => {
     if (comment == "/generate") {
 
       const pr_body = context.payload.issue.body;
-      context.log("PR Body: " + pr_body)
+      // context.log("PR Body: " + pr_body)
 
       const body_lines = pr_body.match(/[^\r\n]+/g);
 
@@ -68,10 +73,22 @@ module.exports = (app, { getRouter }) => {
       ci_params["generators"] = "'examples api-docs'"
 
       const branch_info =  await pull_request.getBranchFromPRNumber(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number)
-      console.log(branch_info)
+      if (branch_info == undefined || branch_info.branch == undefined) {
+        app.log.info("[ERROR] [pullRequestComment] branch_info undefined")
+        pull_request.createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.pull_request.number, "There was an error triggering checks!")
+        return
+      }
+      // console.log(branch_info)
       
       let pipeline_id = await circleci.triggerCircleCIPipeline(branch_info.branch, ci_params)
       app.log.info("PIPELINE ID " + pipeline_id)
+      if (pipeline_id == undefined) {
+        pull_request.createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number, "There was an error triggering checks!")
+        return
+      }
+
+      pull_request.createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number, "Checks correctly triggered!")
+
 
       // let jobs = await circleci.getPipelineJobs(pipeline_id)
       // for (let job of jobs) {

@@ -52,6 +52,15 @@ async function getBranchFromPRNumber(octokit, owner, repo, pr_number) {
     return {branch: response.data.head.ref, sha: response.data.head.sha};
 }
 
+async function createPRComment(octokit, owner, repo, pr_number, body) {
+  await octokit.rest.issues.createComment({
+    owner: owner,
+    repo: repo,
+    issue_number: pr_number,
+    body: body
+  })
+}
+
 
 exports.parsePRDescription = parsePRDescription
 exports.parsePRUpstream = parsePRUpstream

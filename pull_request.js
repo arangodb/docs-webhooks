@@ -66,7 +66,8 @@ async function createPR(octokit) {
     repo: "docs-hugo",
     title: "[CircleCI Generated] Scheduled generated content",
     body: "Test create PR",
-    head: "scheduled-content-generate"
+    head: "scheduled-content-generate",
+    base: "main"
   })
   console.log(response)
 }

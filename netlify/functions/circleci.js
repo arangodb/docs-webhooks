@@ -18,17 +18,8 @@ const octokit = new ProbotOctokit({
  */
 exports.handler = async function (event, context) {
   try {
-    await probot.webhooks.verifyAndReceive({
-      id:
-        event.headers["X-GitHub-Delivery"] ||
-        event.headers["x-github-delivery"],
-      name: event.headers["X-GitHub-Event"] || event.headers["x-github-event"],
-      signature:
-        event.headers["X-Hub-Signature-256"] ||
-        event.headers["x-hub-signature-256"],
-      payload: JSON.parse(event.body),
-    });
-
+    console.log("[CIRCLECI-WEBHOOK] received event ")
+    console.log(event.headers)
     if (event.headers["docs-webhook-event"] == "scheduled-create-pr") {
         console.log("[CIRCLECI-WEBHOOK] [scheduled-create-pr] received")
         pull_request.createPR(octokit)

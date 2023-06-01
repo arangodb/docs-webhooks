@@ -74,7 +74,7 @@ module.exports = (app, { getRouter }) => {
 
       var ci_params = await pull_request.parsePRDescription(body_lines, context.octokit);
       ci_params["workflow"] = "generate"
-      ci_params["generators"] = "'examples api-docs'"
+      ci_params["generators"] = "examples api-docs"
 
       const branch_info =  await pull_request.getBranchFromPRNumber(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number)
       if (branch_info == undefined || branch_info.branch == undefined) {

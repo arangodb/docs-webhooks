@@ -61,6 +61,7 @@ async function createPRComment(octokit, owner, repo, pr_number, body) {
 }
 
 async function createPR(octokit) {
+  console.log("createPR invoked")
   const response = await octokit.pulls.create({
     owner: "arangodb",
     repo: "docs-hugo",
@@ -69,6 +70,7 @@ async function createPR(octokit) {
     head: "scheduled-content-generate",
     base: "main"
   })
+  console.log("after createPR")
   console.log(response)
 }
 

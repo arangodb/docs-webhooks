@@ -31,7 +31,7 @@ module.exports = (app, { getRouter }) => {
     }
 
     ci_params = {"workflow": "plain-build"}
-    let pipeline_id = await circleci.triggerCircleCIPipeline(branch_info.branch, ci_params)
+    let pipeline_id = await circleci.triggerCircleCIPipeline("pull/"+context.payload.pull_request.number+"/head", ci_params)
     console.log("PIPELINE ID " + pipeline_id)
     if (pipeline_id == undefined) {
       pull_request.createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.pull_request.number, "There was an error triggering checks!")

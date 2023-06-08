@@ -17,6 +17,22 @@ async function parsePRDescription(body, octokit) {
           res["arangodb-branch-2"] = "stable,"+branch_name+",3.11,"
           continue
         }
+
+        if (line.match(/(?<=- 3.12: )[\w\W]+/gm)) { 
+          const branch_name = await parsePRUpstream(line.match(/(?<=- 3.12: )[\w\W]+/gm)[0], octokit)
+          if (branch_name == "") continue
+
+          res["arangodb-branch-3"] = "stable,"+branch_name+",3.12,"
+          continue
+        }
+
+        if (line.match(/(?<=- devel: )[\w\W]+/gm)) { 
+          const branch_name = await parsePRUpstream(line.match(/(?<=- devel: )[\w\W]+/gm)[0], octokit)
+          if (branch_name == "") continue
+
+          res["arangodb-branch-4"] = "stable,"+branch_name+",devel,"
+          continue
+        }
     }
 
     return res

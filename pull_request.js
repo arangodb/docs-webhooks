@@ -47,9 +47,7 @@ async function parsePRUpstream(line, octokit) {
       console.log("Parse PR Upstream ")
 
       pr_number = line.match(/\d+/gm);
-      console.log(pr_number)
       var branch_info = await getBranchFromPRNumber(octokit, "arangodb", "arangodb", pr_number)
-      console.log(branch_info.branch)
       return branch_info.branch
     }
     
@@ -86,8 +84,22 @@ async function createPR(octokit) {
     head: "scheduled-content-generate",
     base: "main"
   })
-  console.log("after createPR")
-  console.log(response)
+}
+
+function createSummary(octokit, branch, body) {
+  octokit.rest.checks.create({
+      owner: "arangodb",
+      repo: "docs-hugo",
+      name: "create summary",
+      head_branch: branch,
+      status: "completed",
+      started_at: new Date(),
+      output: {
+          title: "Summary available in checks",
+          summary: body,
+          },
+      });
+
 }
 
 exports.parsePRDescription = parsePRDescription
@@ -95,3 +107,4 @@ exports.parsePRUpstream = parsePRUpstream
 exports.getBranchFromPRNumber = getBranchFromPRNumber
 exports.createPRComment = createPRComment
 exports.createPR = createPR
+exports.createSummary = createSummary

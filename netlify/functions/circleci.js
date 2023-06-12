@@ -25,6 +25,12 @@ exports.handler = async function (event, context) {
         await pull_request.createPR(octokit)
     }
 
+    if (event.headers["docs-webhook-event"] == "create-summary") {
+      console.log("[CIRCLECI-WEBHOOK] [create-summary] received")
+      const branch = event.headers["docs-branch"]
+      await pull_request.createSummary(octokit, branch, event.body)
+  }
+
     return {
       statusCode: 200,
       body: '{"ok":true}',

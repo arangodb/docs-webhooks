@@ -86,8 +86,8 @@ async function createPR(octokit) {
   })
 }
 
-function createSummary(octokit, branch, body) {
-  octokit.rest.checks.create({
+async function createSummary(octokit, branch, body) {
+  await octokit.rest.checks.create({
       owner: "arangodb",
       repo: "docs-hugo",
       name: "create summary",

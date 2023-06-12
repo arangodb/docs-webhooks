@@ -86,13 +86,16 @@ async function createPR(octokit) {
   })
 }
 
-async function createSummary(octokit, branch, body) {
+async function createSummary(octokit, pr_number, body) {
+  const branch_info = getBranchFromPRNumber(octokit, "arangodb", "docs-hugo", pr_number)
   await octokit.rest.checks.create({
       owner: "arangodb",
       repo: "docs-hugo",
       name: "create summary",
-      head_branch: branch,
+      head_branch: branch_info.branch,
+      head_sha: branch_info.sha,
       status: "completed",
+      conclusion: "success",
       started_at: new Date(),
       output: {
           title: "Summary available in checks",

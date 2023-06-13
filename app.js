@@ -9,7 +9,7 @@ var jsonParser = bodyParser.json()
 module.exports = (app, { getRouter }) => {
   app.on(["issue_comment.created"], pullRequestComment);
   app.on(["pull_request.opened", "pull_request.synchronize"], pullRequestOpened);
-.
+
   async function pullRequestOpened(context) {
     console.log("[START] [pullRequestOpened] Invoke")
 

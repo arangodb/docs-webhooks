@@ -90,14 +90,14 @@ async function createSummary(octokit, branch_name, branch_sha, body) {
   await octokit.rest.checks.create({
       owner: "arangodb",
       repo: "docs-hugo",
-      name: "create summary",
+      name: "docs-webhooks: create-summary",
       head_branch: branch_name,
       head_sha: branch_sha,
       status: "completed",
       conclusion: "success",
       started_at: new Date(),
       output: {
-          title: "Summary available in checks",
+          title: "",
           summary: body,
           },
       });

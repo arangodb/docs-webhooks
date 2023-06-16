@@ -43,16 +43,16 @@ module.exports = (app, { getRouter }) => {
     const comment = context.payload.comment.body;
     const user = context.payload.comment.user.login;
     
-    const isAnArangoMember = await context.octokit.request('GET /orgs/arangodb/memberships/'+user, {
-      org: 'arangodb',
-      username: user,
-      headers: {
-        'X-GitHub-Api-Version': '2022-11-28'
-      }
-    })
+    // const isAnArangoMember = await context.octokit.request('GET /orgs/arangodb/memberships/'+user, {
+    //   org: 'arangodb',
+    //   username: user,
+    //   headers: {
+    //     'X-GitHub-Api-Version': '2022-11-28'
+    //   }
+    // })
 
-    console.log("IS ARANGODB")
-    console.log(isAnArangoMember)
+    // console.log("IS ARANGODB")
+    // console.log(isAnArangoMember)
 
     context.log("Comment: " + comment)
 

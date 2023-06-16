@@ -98,7 +98,8 @@ async function createSummary(octokit, branch_name, branch_sha, body) {
       started_at: new Date(),
       output: {
           title: "",
-          summary: body,
+          summary: "summary",
+          text: body
           },
       });
 

@@ -6,7 +6,7 @@ async function parsePRDescription(body, octokit) {
           const branch_name = await parsePRUpstream(line.match(/(?<=- 3.10: )[\w\W]+/gm)[0], octokit)
           if (branch_name == "") continue
 
-          res["arangodb-branch"] = "stable,"+branch_name+",3.10,"
+          res["arangodb-3_10"] = branch_name
           continue
         }
 
@@ -14,7 +14,7 @@ async function parsePRDescription(body, octokit) {
           const branch_name = await parsePRUpstream(line.match(/(?<=- 3.11: )[\w\W]+/gm)[0], octokit)
           if (branch_name == "") continue
 
-          res["arangodb-branch-2"] = "stable,"+branch_name+",3.11,"
+          res["arangodb-3_11"] = branch_name
           continue
         }
 
@@ -22,7 +22,7 @@ async function parsePRDescription(body, octokit) {
           const branch_name = await parsePRUpstream(line.match(/(?<=- 3.12: )[\w\W]+/gm)[0], octokit)
           if (branch_name == "") continue
 
-          res["arangodb-branch-3"] = "stable,"+branch_name+",3.12,"
+          res["arangodb-3_12"] = branch_name
           continue
         }
 
@@ -30,7 +30,7 @@ async function parsePRDescription(body, octokit) {
           const branch_name = await parsePRUpstream(line.match(/(?<=- devel: )[\w\W]+/gm)[0], octokit)
           if (branch_name == "") continue
 
-          res["arangodb-branch-4"] = "stable,"+branch_name+",devel,"
+          res["undefines"] = "stable,"+branch_name+",devel,"
           continue
         }
     }

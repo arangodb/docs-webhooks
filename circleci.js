@@ -23,7 +23,6 @@ async function getPipelineJobs(pipeline_id) {
     })
     
     let data = await workflow.json();
-    console.log(data)
     workflow_id = data.items[0].id;
     console.log("GET WORKFLOW ID " + workflow_id);
 
@@ -34,10 +33,8 @@ async function getPipelineJobs(pipeline_id) {
     
     let jobsData = await jobs.json();
     for (let job of jobsData.items) {
-        console.log(job)
         res.push(job)
     }
-    console.log("GET JOBs " + res);
     return res
 }
 

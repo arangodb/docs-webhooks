@@ -22,7 +22,8 @@ exports.handler = async function (event, context) {
     console.log(event.headers)
     if (event.headers["docs-webhook-event"] == "scheduled-create-pr") {
         console.log("[CIRCLECI-WEBHOOK] [scheduled-create-pr] received")
-        await pull_request.createPR(octokit)
+        const branch_name = event.headers["docs-branch-name"]
+        await pull_request.createPR(octokit, branch_name)
     }
 
     if (event.headers["docs-webhook-event"] == "create-summary") {

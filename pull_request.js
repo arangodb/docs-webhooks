@@ -74,13 +74,13 @@ async function createPRComment(octokit, owner, repo, pr_number, body) {
   })
 }
 
-async function createPR(octokit, head) {
+async function createPR(octokit, head, title, body) {
   console.log("createPR invoked")
   const response = await octokit.pulls.create({
     owner: "arangodb",
     repo: "docs-hugo",
-    title: "[CircleCI Generated] Scheduled generated content",
-    body: "Test create PR",
+    title: title,
+    body: body,
     head: head,
     base: "main"
   })

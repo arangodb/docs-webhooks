@@ -85,7 +85,7 @@ module.exports = (app, { getRouter }) => {
 
     }
 
-    if (comment == "/commit-generated") {
+    if (comment == "/commit") {
       const pr_body = context.payload.issue.body;
       const body_lines = pr_body.match(/[^\r\n]+/g);
 

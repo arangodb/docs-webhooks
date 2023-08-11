@@ -82,7 +82,7 @@ async function createSummary(octokit, branch_name, check_name, branch_sha, body)
   await octokit.rest.checks.create({
       owner: "arangodb",
       repo: "docs-hugo",
-      name: "docs-webhooks: create-summary",
+      name: "docs-webhooks: " + check_name,
       head_branch: branch_name,
       head_sha: branch_sha,
       status: "completed",

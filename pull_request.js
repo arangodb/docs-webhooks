@@ -74,7 +74,7 @@ async function createPR(octokit, head, title, body) {
     title: title,
     body: body,
     head: head,
-    base: "main"
+    base: "frontend-preview"
   })
 }
 

@@ -32,7 +32,9 @@ exports.handler = async function (event, context) {
       console.log("[CIRCLECI-WEBHOOK] [create-summary] received")
       const branch_name = event.headers["docs-branch-name"]
       const branch_sha = event.headers["docs-branch-sha"]
-      await pull_request.createSummary(octokit, branch_name, branch_sha, event.body)
+      const check_name = event.headers["docs-check-name"]
+
+      await pull_request.createSummary(octokit, branch_name, check_name, branch_sha, event.body)
   }
 
     return {

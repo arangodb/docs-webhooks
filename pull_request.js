@@ -25,14 +25,6 @@ async function parsePRDescription(body, octokit) {
           res["arangodb-3_12"] = branch_name
           continue
         }
-
-        if (line.match(/(?<=- devel: )[\w\W]+/gm)) { 
-          const branch_name = await parsePRUpstream(line.match(/(?<=- devel: )[\w\W]+/gm)[0], octokit)
-          if (branch_name == "") continue
-
-          res["undefines"] = "stable,"+branch_name+",devel,"
-          continue
-        }
     }
 
     return res
@@ -102,7 +94,15 @@ async function createSummary(octokit, branch_name, branch_sha, body) {
           text: body
           },
       });
+}
 
+async function getCommitMessage(octokit, branch_name) {
+  const response = await octokit.rest.git.getCommit({
+    owner: "arangodb",
+    repo: "docs-hugo",
+    ref: "heads/"+branch_name
+  })
+  console.log(response)
 }
 
 exports.parsePRDescription = parsePRDescription
@@ -111,3 +111,4 @@ exports.getBranchFromPRNumber = getBranchFromPRNumber
 exports.createPRComment = createPRComment
 exports.createPR = createPR
 exports.createSummary = createSummary
+exports.getCommitMessage = getCommitMessage

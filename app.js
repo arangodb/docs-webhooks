@@ -26,6 +26,9 @@ module.exports = (app, { getRouter }) => {
       return
     }
 
+    // Check commit message does not contain [skip ci]
+    await pull_request.getCommitMessage(context.octokit, branch_info.branch)
+
     ci_params = {"workflow": "plain-build", "deploy-url": deploy_preview}
     let pipeline_id = await circleci.triggerCircleCIPipeline(branch_info.branch, ci_params)
     console.log("PIPELINE ID " + pipeline_id)

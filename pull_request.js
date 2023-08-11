@@ -97,7 +97,7 @@ async function createSummary(octokit, branch_name, branch_sha, body) {
 }
 
 async function getCommitMessage(octokit, branch_name) {
-  const response = await octokit.rest.git.getCommit({
+  const response = await octokit.git.getCommit({
     owner: "arangodb",
     repo: "docs-hugo",
     ref: "heads/"+branch_name

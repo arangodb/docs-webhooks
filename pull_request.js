@@ -1,30 +1,17 @@
+const versions = ["3.10", "3.11", "3.12"]
 
 async function parsePRDescription(body, octokit) {
     res = {}
-    for (let line of body) {
-        if (line.match(/(?<=- 3.10: )[\w\W]+/gm)) { 
-          const branch_name = await parsePRUpstream(line.match(/(?<=- 3.10: )[\w\W]+/gm)[0], octokit)
-          if (branch_name == "") continue
 
-          res["arangodb-3_10"] = branch_name
-          continue
-        }
+    for (let version of versions) {
+      if (body.match('/(?<=- '+version+': )[\w\W]+/gm')) { 
+        version_underscore = version.replace(".", "_");
+        const branch_name = await parsePRUpstream(body.match('/(?<=- '+version+': )[\w\W]+/gm')[0], octokit)
+        if (branch_name == "") continue
 
-        if (line.match(/(?<=- 3.11: )[\w\W]+/gm)) { 
-          const branch_name = await parsePRUpstream(line.match(/(?<=- 3.11: )[\w\W]+/gm)[0], octokit)
-          if (branch_name == "") continue
-
-          res["arangodb-3_11"] = branch_name
-          continue
-        }
-
-        if (line.match(/(?<=- 3.12: )[\w\W]+/gm)) { 
-          const branch_name = await parsePRUpstream(line.match(/(?<=- 3.12: )[\w\W]+/gm)[0], octokit)
-          if (branch_name == "") continue
-
-          res["arangodb-3_12"] = branch_name
-          continue
-        }
+        res["arangodb-"+version_underscore+] = branch_name
+        continue
+      }
     }
 
     return res

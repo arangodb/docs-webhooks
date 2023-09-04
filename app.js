@@ -58,7 +58,6 @@ module.exports = (app, { getRouter }) => {
 
     if (comment.includes("/generate")) {
       const pr_body = context.payload.issue.body;
-      const body_lines = pr_body.match(/[^\r\n]+/g);
 
       var deploy_preview = "deploy-preview-"+context.payload.issue.number
 

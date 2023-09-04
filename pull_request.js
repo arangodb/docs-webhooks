@@ -9,7 +9,7 @@ async function parsePRDescription(body, octokit) {
         const branch_name = await parsePRUpstream(body.match('/(?<=- '+version+': )[\w\W]+/gm')[0], octokit)
         if (branch_name == "") continue
 
-        res["arangodb-"+version_underscore+] = branch_name
+        res["arangodb-"+version_underscore] = branch_name
         continue
       }
     }

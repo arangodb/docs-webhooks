@@ -1,7 +1,7 @@
-const versions = ["3.10", "3.11", "3.12"]
 
 async function parsePRDescription(body, octokit) {
     res = {}
+    const versions = ["3.10", "3.11", "3.12"]
 
     for (let version of versions) {
       if (body.match('/(?<=- '+version+': )[\w\W]+/gm')) { 

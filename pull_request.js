@@ -3,7 +3,7 @@ async function parsePRDescription(body, octokit) {
   res = {}
   for (let line of body) {
     if(line.match(/- \d.\d{1,}:[\w\W]+/gm)) {
-      var image = line.match(/(?<=^- \d.\d{1,}:)[\w\W]+/gm)[0]
+      var image = line.match(/(?<=^- \d.\d{1,}:)[\w\W]+/gm)[0].replace(" ", "")
       const branch_name = await parsePRUpstream(image, octokit)
       if (branch_name == "") continue
 

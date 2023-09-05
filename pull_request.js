@@ -1,26 +1,18 @@
 
 async function parsePRDescription(body, octokit) {
-    res = {}
-    const versions = ["3.10", "3.11", "3.12"]
+  res = {}
+  for (let line of body) {
+    if(line.match(/- \d.\d{1,}:[\w\W]+/gm)) {
+      var image = line.match(/(?<=^- \d.\d{1,}:)[\w\W]+/gm)[0]
+      const branch_name = await parsePRUpstream(image, octokit)
+      if (branch_name == "") continue
 
-    for (let version of versions) {
-      console.log("[parsePRDescription] Parsing Version " + version)
-      var regString = "(?<=- "+version+": )[\w\W]"
-      var regex = new RegExp( regString, 'gm' );
-
-      if (body.match(regex)) { 
-        console.log("[parsePRDescription] Found Match")
-        version_underscore = version.replace(".", "_");
-        console.log("[parsePRDescription] Version Underscore " + version_underscore)
-
-        const branch_name = await parsePRUpstream(body.match('/(?<=- '+version+': )[\w\W]+/gm')[0], octokit)
-        console.log("[parsePRDescription] Branch Name: " + branch_name)
-        if (branch_name == "") continue
-
-        res["arangodb-"+version_underscore] = branch_name
-        continue
-      }
+      var version = line.match(/(?<=^- )\d.\d{1,}/gm)[0]
+      var version_underscore = version.replace(".", "_")
+      res["arangodb-"+version_underscore] = branch_name
+      continue
     }
+  }
 
     return res
 }

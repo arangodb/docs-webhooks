@@ -58,11 +58,12 @@ module.exports = (app, { getRouter }) => {
 
     if (comment.includes("/generate")) {
       const pr_body = context.payload.issue.body;
+      const body_lines = pr_body.match(/[^\r\n]+/g);
 
       var deploy_preview = "deploy-preview-"+context.payload.issue.number
 
 
-      var ci_params = await pull_request.parsePRDescription(pr_body, context.octokit);
+      var ci_params = await pull_request.parsePRDescription(body_lines, context.octokit);
       ci_params["workflow"] = "generate"
       ci_params["generators"] = "examples api-docs"
       ci_params["deploy-url"] = deploy_preview

@@ -35,9 +35,9 @@ async function parsePRUpstream(line, octokit) {
 
 
 async function getBranchFromPR(octokit, owner, repo, pr) {
-  console.log("[DEBUG] pull_request repo object " + JSON.stringify(pr))
+  console.log("[DEBUG] pull_request repo object " + JSON.stringify(pr.head))
 
-  if (pr.repo.full_name != "arangodb/docs-hugo") 
+  if (pr.head.repo.full_name != "arangodb/docs-hugo") 
       return {branch: "pull/"+pr.number+"/head", sha: ""};
 
   return await getBranchFromPRNumber(octokit, owner, repo, pr.number)

@@ -18,7 +18,6 @@ module.exports = (app, { getRouter }) => {
     if (context.payload.action == "opened") {
       pull_request.createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.pull_request.number, "**Deploy Preview Available Via**<br>https://"+deploy_preview+"--docs-hugo.netlify.app")
     }
-
     const branch_info =  await pull_request.getBranchFromPR(context.octokit, "arangodb", "docs-hugo", context.payload.pull_request)
     if (branch_info == undefined || branch_info.branch == undefined) {
       console.log("[ERROR] [pullRequestOpened] branch_info undefined")

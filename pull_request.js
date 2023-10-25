@@ -34,6 +34,13 @@ async function parsePRUpstream(line, octokit) {
 }
 
 
+async function getBranchFromPR(octokit, owner, repo, pr) {
+  if (pr.repo.full_name != "arangodb/docs-hugo") 
+      return {branch: "pull/"+pr.number+"/head", sha: ""};
+
+  return await getBranchFromPRNumber(octokit, owner, repo, pr.number)
+}
+
 
 async function getBranchFromPRNumber(octokit, owner, repo, pr_number) {
     const response = await octokit.pulls.get({
@@ -95,6 +102,7 @@ async function getCommitMessage(octokit, branch_name) {
 exports.parsePRDescription = parsePRDescription
 exports.parsePRUpstream = parsePRUpstream
 exports.getBranchFromPRNumber = getBranchFromPRNumber
+exports.getBranchFromPR = getBranchFromPR
 exports.createPRComment = createPRComment
 exports.createPR = createPR
 exports.createSummary = createSummary

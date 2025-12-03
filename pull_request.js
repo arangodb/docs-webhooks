@@ -2,14 +2,16 @@
 async function parsePRDescription(body, octokit) {
   res = {}
   for (let line of body) {
-    if(line.match(/- \d.\d{1,}:[\w\W]+/gm)) {
-      var image = line.match(/(?<=^- \d.\d{1,}:)[\w\W]+/gm)[0].replace(" ", "")
+    // This needs to match with PULL_REQUEST_TEMPLATE.md in arangodb/docs-hugo
+    const matches = line.match(/^- (\d\.\d{1,2}|OEM):([\w\W]+)/)
+    if (matches) {
+      var image = matches[2].trim()
       const branch_name = await parsePRUpstream(image, octokit)
       if (branch_name == "") continue
 
-      var version = line.match(/(?<=^- )\d.\d{1,}/gm)[0]
-      var version_underscore = version.replace(".", "_")
-      res["arangodb-"+version_underscore] = branch_name
+      var version = matches[1].trim()
+      var version_underscore_lower = version.replace(".", "_").toLowerCase()
+      res["arangodb-" + version_underscore_lower] = branch_name
       continue
     }
   }
@@ -20,12 +22,14 @@ async function parsePRDescription(body, octokit) {
 
 
 async function parsePRUpstream(line, octokit) {
-    if (line.replace(/\s/g,'') == "") return ""
+    if (line == "") return ""
 
-    if (line.includes("https://")) {
+    if (line.includes("https://github.com/")) {
       console.log("Parse PR Upstream ")
 
-      pr_number = line.match(/\d+/gm);
+      match = line.match(/\/pull\/(\d+)/)
+      if (!match) return "" // Ignore invalid link
+      pr_number = match[1]
       var branch_info = await getBranchFromPRNumber(octokit, "arangodb", "arangodb", pr_number)
       return branch_info.branch
     }
@@ -38,7 +42,7 @@ async function getBranchFromPR(octokit, owner, repo, pr) {
   console.log("[DEBUG] pull_request repo object " + JSON.stringify(pr.head))
 
   if (pr.head.repo.full_name != "arangodb/docs-hugo") 
-      return {branch: "pull/"+pr.number+"/head", sha: ""};
+      return { branch: "pull/" + pr.number + "/head", sha: "" };
 
   return await getBranchFromPRNumber(octokit, owner, repo, pr.number)
 }
@@ -50,7 +54,7 @@ async function getBranchFromPRNumber(octokit, owner, repo, pr_number) {
             repo: repo,
             pull_number: pr_number
         })
-    return {branch: response.data.head.ref, sha: response.data.head.sha};
+    return { branch: response.data.head.ref, sha: response.data.head.sha };
 }
 
 async function createPRComment(octokit, owner, repo, pr_number, body) {

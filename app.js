@@ -39,7 +39,7 @@ module.exports = (app, { getRouter }) => {
 
   async function pullRequestComment(context) {
     context.log("Github Webhook: issue_comment.created")
-    const comment = context.payload.comment.body;
+    const comment = context.payload.comment.body.trim();
     const user = context.payload.comment.user.login;
     
     // const isAnArangoMember = await context.octokit.request('GET /orgs/arangodb/memberships/'+user, {
@@ -55,7 +55,7 @@ module.exports = (app, { getRouter }) => {
 
     context.log("Comment: " + comment)
 
-    if (comment.includes("/generate")) {
+    if (comment == "/generate" || comment == "/generate-commit") {
       const pr_body = context.payload.issue.body;
       const body_lines = pr_body.match(/[^\r\n]+/g);
 
@@ -66,7 +66,7 @@ module.exports = (app, { getRouter }) => {
       ci_params["workflow"] = "generate"
       ci_params["generators"] = "examples api-docs"
       ci_params["deploy-url"] = deploy_preview
-      if (comment.includes("commit")) ci_params["commit-generated"] = true
+      if (comment == "/generate-commit") ci_params["commit-generated"] = true
 
       const branch_info =  await pull_request.getBranchFromPRNumber(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number)
       if (branch_info == undefined || branch_info.branch == undefined) {

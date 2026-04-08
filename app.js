@@ -9,6 +9,7 @@ var jsonParser = bodyParser.json()
 module.exports = (app, { getRouter }) => {
   app.on(["issue_comment.created"], pullRequestComment);
   app.on(["pull_request.opened", "pull_request.synchronize"], pullRequestOpened);
+  app.on("push", pushToMain);
 
   async function pullRequestOpened(context) {
     console.log("[START] [pullRequestOpened] Invoke")
@@ -34,8 +35,13 @@ module.exports = (app, { getRouter }) => {
     }
   }
 
+  async function pushToMain(context) {
+    if (context.payload.ref !== "refs/heads/main") return;
+    console.log("[START] [pushToMain] Invoke")
 
-
+    let pipeline_id = await circleci.triggerCircleCIPipeline("main", {"workflow": "plain-build"})
+    console.log("PIPELINE ID " + pipeline_id)
+  }
 
   async function pullRequestComment(context) {
     context.log("Github Webhook: issue_comment.created")

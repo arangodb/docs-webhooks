@@ -1,9 +1,8 @@
 const circleci = require('./circleci')
 const pull_request = require('./pull_request')
 
-var bodyParser = require('body-parser')
-var jsonParser = bodyParser.json()
-
+const bodyParser = require('body-parser')
+const jsonParser = bodyParser.json()
 
 
 module.exports = (app, { getRouter }) => {
@@ -14,7 +13,7 @@ module.exports = (app, { getRouter }) => {
   async function pullRequestOpened(context) {
     console.log("[START] [pullRequestOpened] Invoke")
 
-    var deploy_preview = "deploy-preview-"+context.payload.pull_request.number
+    let deploy_preview = "deploy-preview-"+context.payload.pull_request.number
 
     if (context.payload.action == "opened") {
       pull_request.createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.pull_request.number, "**Deploy Preview Available Via**<br>https://"+deploy_preview+"--docs-hugo.netlify.app")
@@ -26,7 +25,7 @@ module.exports = (app, { getRouter }) => {
       return
     }
 
-    ci_params = {"workflow": "plain-build", "deploy-url": deploy_preview}
+    let ci_params = { "workflow": "plain-build", "deploy-url": deploy_preview }
     let pipeline_id = await circleci.triggerCircleCIPipeline(branch_info.branch, ci_params)
     console.log("PIPELINE ID " + pipeline_id)
     if (pipeline_id == undefined) {
@@ -66,10 +65,9 @@ module.exports = (app, { getRouter }) => {
       const pr_body = context.payload.issue.body;
       const body_lines = pr_body.match(/[^\r\n]+/g);
 
-      var deploy_preview = "deploy-preview-"+context.payload.issue.number
+      let deploy_preview = "deploy-preview-"+context.payload.issue.number
 
-
-      var ci_params = await pull_request.parsePRDescription(body_lines, context.octokit);
+      let ci_params = await pull_request.parsePRDescription(body_lines, context.octokit);
       ci_params["workflow"] = "generate"
       ci_params["generators"] = "examples api-docs"
       ci_params["deploy-url"] = deploy_preview
@@ -95,7 +93,7 @@ module.exports = (app, { getRouter }) => {
       const pr_body = context.payload.issue.body;
       const body_lines = pr_body.match(/[^\r\n]+/g);
 
-      var ci_params = await pull_request.parsePRDescription(body_lines, context.octokit);
+      let ci_params = await pull_request.parsePRDescription(body_lines, context.octokit);
       ci_params["workflow"] = "commit-generated"
 
       const branch_info =  await pull_request.getBranchFromPRNumber(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number)

@@ -39,7 +39,8 @@ module.exports = (app, { getRouter }) => {
     if (context.payload.ref !== "refs/heads/main") return;
     console.log("[START] [pushToMain] Invoke")
 
-    let pipeline_id = await circleci.triggerCircleCIPipeline("main", {"workflow": "plain-build"})
+    let ci_params = { "workflow": "plain-build", "deploy-url": "main" }
+    let pipeline_id = await circleci.triggerCircleCIPipeline("main", ci_params)
     console.log("PIPELINE ID " + pipeline_id)
   }
 

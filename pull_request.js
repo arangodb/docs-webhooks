@@ -1,16 +1,16 @@
 
-async function parsePRDescription(body, octokit) {
-  res = {}
+export async function parsePRDescription(body, octokit) {
+  let res = {}
   for (let line of body) {
     // This needs to match with PULL_REQUEST_TEMPLATE.md in arangodb/docs-hugo
     const matches = line.match(/^- (\d\.\d{1,2}|OEM):([\w\W]+)/)
     if (matches) {
-      var image = matches[2].trim()
+      const image = matches[2].trim()
       const branch_name = await parsePRUpstream(image, octokit)
       if (branch_name == "") continue
 
-      var version = matches[1].trim()
-      var version_underscore_lower = version.replace(".", "_").toLowerCase()
+      const version = matches[1].trim()
+      const version_underscore_lower = version.replace(".", "_").toLowerCase()
       res["arangodb-" + version_underscore_lower] = branch_name
       continue
     }
@@ -19,26 +19,23 @@ async function parsePRDescription(body, octokit) {
     return res
 }
 
-
-
-async function parsePRUpstream(line, octokit) {
+export async function parsePRUpstream(line, octokit) {
     if (line == "") return ""
 
     if (line.includes("https://github.com/")) {
       console.log("Parse PR Upstream ")
 
-      match = line.match(/\/pull\/(\d+)/)
+      const match = line.match(/\/pull\/(\d+)/)
       if (!match) return "" // Ignore invalid link
-      pr_number = match[1]
-      var branch_info = await getBranchFromPRNumber(octokit, "arangodb", "arangodb", pr_number)
+      const pr_number = match[1]
+      const branch_info = await getBranchFromPRNumber(octokit, "arangodb", "arangodb", pr_number)
       return branch_info.branch
     }
     
     return line
 }
 
-
-async function getBranchFromPR(octokit, owner, repo, pr) {
+export async function getBranchFromPR(octokit, owner, repo, pr) {
   console.log("[DEBUG] pull_request repo object " + JSON.stringify(pr.head))
 
   if (pr.head.repo.full_name != "arangodb/docs-hugo") 
@@ -47,9 +44,8 @@ async function getBranchFromPR(octokit, owner, repo, pr) {
   return await getBranchFromPRNumber(octokit, owner, repo, pr.number)
 }
 
-
-async function getBranchFromPRNumber(octokit, owner, repo, pr_number) {
-    const response = await octokit.pulls.get({
+export async function getBranchFromPRNumber(octokit, owner, repo, pr_number) {
+    const response = await octokit.rest.pulls.get({
             owner: owner,
             repo: repo,
             pull_number: pr_number
@@ -57,7 +53,7 @@ async function getBranchFromPRNumber(octokit, owner, repo, pr_number) {
     return { branch: response.data.head.ref, sha: response.data.head.sha };
 }
 
-async function createPRComment(octokit, owner, repo, pr_number, body) {
+export async function createPRComment(octokit, owner, repo, pr_number, body) {
   await octokit.rest.issues.createComment({
     owner: owner,
     repo: repo,
@@ -66,9 +62,9 @@ async function createPRComment(octokit, owner, repo, pr_number, body) {
   })
 }
 
-async function createPR(octokit, head, title, body) {
+export async function createPR(octokit, head, title, body) {
   console.log("createPR invoked")
-  const response = await octokit.pulls.create({
+  await octokit.rest.pulls.create({
     owner: "arangodb",
     repo: "docs-hugo",
     title: title,
@@ -78,7 +74,7 @@ async function createPR(octokit, head, title, body) {
   })
 }
 
-async function createSummary(octokit, branch_name, check_name, branch_sha, body) {
+export async function createSummary(octokit, branch_name, check_name, branch_sha, body) {
   await octokit.rest.checks.create({
       owner: "arangodb",
       repo: "docs-hugo",
@@ -96,7 +92,7 @@ async function createSummary(octokit, branch_name, check_name, branch_sha, body)
       });
 }
 
-async function getCommitMessage(octokit, branch_name) {
+export async function getCommitMessage(octokit, branch_name) {
   const response = await octokit.git.getCommit({
     owner: "arangodb",
     repo: "docs-hugo",
@@ -104,12 +100,3 @@ async function getCommitMessage(octokit, branch_name) {
   })
   console.log(response)
 }
-
-exports.parsePRDescription = parsePRDescription
-exports.parsePRUpstream = parsePRUpstream
-exports.getBranchFromPRNumber = getBranchFromPRNumber
-exports.getBranchFromPR = getBranchFromPR
-exports.createPRComment = createPRComment
-exports.createPR = createPR
-exports.createSummary = createSummary
-exports.getCommitMessage = getCommitMessage

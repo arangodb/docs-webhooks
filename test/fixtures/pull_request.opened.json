@@ -1,0 +1,20 @@
+{
+  "action": "opened",
+  "number": 42,
+  "pull_request": {
+    "number": 42,
+    "head": {
+      "ref": "feature-branch",
+      "sha": "deadbeef",
+      "repo": {
+        "full_name": "contributor/docs-hugo"
+      }
+    }
+  },
+  "repository": {
+    "full_name": "arangodb/docs-hugo"
+  },
+  "installation": {
+    "id": 2
+  }
+}

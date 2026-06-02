@@ -1,0 +1,19 @@
+{
+  "action": "created",
+  "issue": {
+    "number": 7,
+    "body": "Some PR description without any version lines"
+  },
+  "comment": {
+    "body": "/generate",
+    "user": {
+      "login": "contributor"
+    }
+  },
+  "repository": {
+    "full_name": "arangodb/docs-hugo"
+  },
+  "installation": {
+    "id": 2
+  }
+}

@@ -1,5 +1,5 @@
-const { createProbot } = require("probot");
-const app = require("../../app");
+import { createProbot } from "probot";
+import app from "../../app.js";
 
 const probot = createProbot();
 const loadingApp = probot.load(app);
@@ -10,7 +10,7 @@ const loadingApp = probot.load(app);
  * @param {import("@netlify/functions").HandlerEvent} event
  * @param {import("@netlify/functions").HandlerContext} context
  */
-exports.handler = async function (event, context) {
+export async function handler (event, context) {
   try {
     await loadingApp;
 
@@ -24,7 +24,7 @@ exports.handler = async function (event, context) {
       signature:
         event.headers["X-Hub-Signature-256"] ||
         event.headers["x-hub-signature-256"],
-      payload: JSON.parse(event.body),
+      payload: event.body,
     });
 
     return {
@@ -32,11 +32,11 @@ exports.handler = async function (event, context) {
       body: '{"ok":true}',
     };
   } catch (error) {
-    app.log.error(error);
+    probot.log.error(error);
 
     return {
       statusCode: error.status || 500,
-      error: "ooops",
+      body: '{"ok":false}',
     };
   }
-};
+}

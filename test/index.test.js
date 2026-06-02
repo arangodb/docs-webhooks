@@ -1,69 +1,122 @@
-const nock = require("nock");
-// Requiring our app implementation
-const myProbotApp = require("..");
-const { Probot, ProbotOctokit } = require("probot");
-// Requiring our fixtures
-const checkSuitePayload = require("./fixtures/check_suite.requested");
-const checkRunSuccess = require("./fixtures/check_run.created");
-const fs = require("fs");
-const path = require("path");
+import { jest, describe, test, expect, beforeEach } from "@jest/globals";
+import { Probot } from "probot";
+import { readFileSync } from "fs";
+import { join } from "path";
+// Fixtures
+import pushMainPayload from "./fixtures/push.main.json" with { type: "json" };
+import pullRequestOpenedPayload from "./fixtures/pull_request.opened.json" with { type: "json" };
+import issueCommentGeneratePayload from "./fixtures/issue_comment.generate.json" with { type: "json" };
 
-const privateKey = fs.readFileSync(
-  path.join(__dirname, "fixtures/mock-cert.pem"),
+// app.js is pure orchestration: it decides which CircleCI pipeline / PR comment
+// to fire for each webhook event. We mock its collaborator modules and assert
+// the routing, rather than mocking HTTP (Octokit's fetch isn't reliably
+// interceptable under Jest's ESM VM loader).
+const triggerCircleCIPipeline = jest.fn();
+jest.unstable_mockModule("../circleci.js", () => ({
+  triggerCircleCIPipeline,
+  getPipelineJobs: jest.fn(),
+}));
+
+const createPRComment = jest.fn();
+const getBranchFromPR = jest.fn();
+const getBranchFromPRNumber = jest.fn();
+const parsePRDescription = jest.fn();
+jest.unstable_mockModule("../pull_request.js", () => ({
+  createPRComment,
+  getBranchFromPR,
+  getBranchFromPRNumber,
+  parsePRDescription,
+  parsePRUpstream: jest.fn(),
+  createPR: jest.fn(),
+  createSummary: jest.fn(),
+  getCommitMessage: jest.fn(),
+}));
+
+// Must import the app AFTER registering the module mocks.
+const { default: myProbotApp } = await import("../app.js");
+
+const privateKey = readFileSync(
+  join(import.meta.dirname, "fixtures/mock-cert.pem"),
   "utf-8"
 );
 
-describe("My Probot app", () => {
+describe("ArangoDB docs automation app", () => {
   let probot;
-  let mockCert;
 
   beforeEach(() => {
-    nock.disableNetConnect();
+    jest.clearAllMocks();
+    // Sensible default return values; individual tests override as needed.
+    triggerCircleCIPipeline.mockResolvedValue("pipeline-123");
+    createPRComment.mockResolvedValue(undefined);
+    getBranchFromPR.mockResolvedValue({ branch: "pull/42/head", sha: "" });
+    getBranchFromPRNumber.mockResolvedValue({
+      branch: "generate-branch",
+      sha: "cafef00d",
+    });
+    parsePRDescription.mockResolvedValue({});
+
     probot = new Probot({
       appId: 123,
       privateKey,
-      // disable request throttling and retries for testing
-      Octokit: ProbotOctokit.defaults({
-        retry: { enabled: false },
-        throttle: { enabled: false },
-      }),
+      githubToken: "test",
     });
-    // Load our app into probot
     probot.load(myProbotApp);
   });
 
-  test("creates a passing check", async () => {
-    const mock = nock("https://api.github.com")
-      .post("/app/installations/2/access_tokens")
-      .reply(200, {
-        token: "test",
-        permissions: {
-          checks: "write",
-        },
-      })
+  test("push to main triggers a plain-build pipeline on main", async () => {
+    await probot.receive({ name: "push", payload: pushMainPayload });
 
-      .post("/repos/hiimbex/testing-things/check-runs", (body) => {
-        body.started_at = "2018-10-05T17:35:21.594Z";
-        body.completed_at = "2018-10-05T17:35:53.683Z";
-        expect(body).toMatchObject(checkRunSuccess);
-        return true;
-      })
-      .reply(200);
-
-    // Receive a webhook event
-    await probot.receive({ name: "check_suite", payload: checkSuitePayload });
-
-    expect(mock.pendingMocks()).toStrictEqual([]);
+    expect(triggerCircleCIPipeline).toHaveBeenCalledTimes(1);
+    expect(triggerCircleCIPipeline).toHaveBeenCalledWith("main", {
+      workflow: "plain-build",
+      "deploy-url": "deploy-preview-main",
+    });
   });
 
-  afterEach(() => {
-    nock.cleanAll();
-    nock.enableNetConnect();
+  test("push to a non-main branch triggers nothing", async () => {
+    await probot.receive({
+      name: "push",
+      payload: { ...pushMainPayload, ref: "refs/heads/feature" },
+    });
+
+    expect(triggerCircleCIPipeline).not.toHaveBeenCalled();
+  });
+
+  test("opening a PR comments the preview URL and triggers plain-build", async () => {
+    await probot.receive({
+      name: "pull_request",
+      payload: pullRequestOpenedPayload,
+    });
+
+    expect(createPRComment).toHaveBeenCalledWith(
+      expect.anything(),
+      "arangodb",
+      "docs-hugo",
+      42,
+      "**Deploy Preview Available Via**<br>https://deploy-preview-42--docs-hugo.netlify.app"
+    );
+    expect(triggerCircleCIPipeline).toHaveBeenCalledWith("pull/42/head", {
+      workflow: "plain-build",
+      "deploy-url": "deploy-preview-42",
+    });
+  });
+
+  test("a /generate comment looks up the branch and triggers a generate build", async () => {
+    await probot.receive({
+      name: "issue_comment",
+      payload: issueCommentGeneratePayload,
+    });
+
+    expect(getBranchFromPRNumber).toHaveBeenCalledWith(
+      expect.anything(),
+      "arangodb",
+      "docs-hugo",
+      7
+    );
+    expect(triggerCircleCIPipeline).toHaveBeenCalledWith("generate-branch", {
+      workflow: "generate",
+      generators: "examples api-docs",
+      "deploy-url": "deploy-preview-7",
+    });
   });
 });
-
-// For more information about testing with Jest see:
-// https://facebook.github.io/jest/
-
-// For more information about testing with Nock see:
-// https://github.com/nock/nock

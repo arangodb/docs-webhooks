@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "arangodb-docs-automation",
   "version": "1.0.0",
   "private": true,
@@ -13,19 +14,20 @@
   ],
   "scripts": {
     "start": "probot run ./app.js",
-    "test": "jest"
+    "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest"
   },
   "dependencies": {
-    "probot": "^12.2.4",
-    "body-parser": "latest"
+    "body-parser": "latest",
+    "probot": "^14.3.2"
   },
   "devDependencies": {
-    "jest": "^29.0.0",
-    "nock": "^13.0.5",
-    "smee-client": "^1.2.2"
+    "cross-env": "^10.1.0",
+    "jest": "^30.4.2",
+    "nock": "^14.0.15",
+    "smee-client": "^5.0.0"
   },
   "engines": {
-    "node": ">= 10.13.0"
+    "node": ">= 22.0.0"
   },
   "jest": {
     "testEnvironment": "node"

@@ -3,13 +3,13 @@ export async function parsePRDescription(body, octokit) {
   let res = {}
   for (let line of body) {
     // This needs to match with PULL_REQUEST_TEMPLATE.md in arangodb/docs-hugo
-    const matches = line.match(/^- (\d\.\d{1,2}|OEM):([\w\W]+)/)
+    const matches = line.match(/^- (\d{1,2}\.(?:\d{1,2}|x)):\s*(\S+)/)
     if (matches) {
-      const image = matches[2].trim()
+      const image = matches[2]
       const branch_name = await parsePRUpstream(image, octokit)
       if (branch_name == "") continue
 
-      const version = matches[1].trim()
+      const version = matches[1]
       const version_underscore_lower = version.replace(".", "_").toLowerCase()
       res["arangodb-" + version_underscore_lower] = branch_name
       continue

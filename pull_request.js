@@ -25,6 +25,11 @@ export async function parsePRUpstream(line, octokit) {
     if (line.includes("https://github.com/")) {
       console.log("Parse PR Upstream ")
 
+      // Link to a branch (no pull request needed), e.g.
+      // https://github.com/arangodb/arangodb/tree/feature/new-aql-function
+      const branch = line.match(/\/arangodb\/arangodb\/tree\/(\S+?)\/?$/)
+      if (branch) return decodeURIComponent(branch[1])
+
       const match = line.match(/\/pull\/(\d+)/)
       if (!match) return "" // Ignore invalid link
       const pr_number = match[1]
@@ -53,6 +58,19 @@ export async function getBranchFromPRNumber(octokit, owner, repo, pr_number) {
     return { branch: response.data.head.ref, sha: response.data.head.sha };
 }
 
+// Whether a user is a member of the arangodb GitHub organization. Requires the
+// "Members" organization permission (read) of the GitHub App, false otherwise.
+export async function isOrgMember(octokit, username) {
+  try {
+    // 204 for members, an error (404) otherwise
+    await octokit.rest.orgs.checkMembershipForUser({ org: "arangodb", username: username })
+    return true
+  } catch (error) {
+    console.log("[isOrgMember] " + username + ": " + error.status)
+    return false
+  }
+}
+
 export async function createPRComment(octokit, owner, repo, pr_number, body) {
   await octokit.rest.issues.createComment({
     owner: owner,
@@ -74,7 +92,7 @@ export async function createPR(octokit, head, title, body) {
   })
 }
 
-export async function createSummary(octokit, branch_name, check_name, branch_sha, body) {
+export async function createSummary(octokit, branch_name, check_name, branch_sha, body, conclusion = "success") {
   await octokit.rest.checks.create({
       owner: "arangodb",
       repo: "docs-hugo",
@@ -82,7 +100,7 @@ export async function createSummary(octokit, branch_name, check_name, branch_sha
       head_branch: branch_name,
       head_sha: branch_sha,
       status: "completed",
-      conclusion: "success",
+      conclusion: conclusion,
       started_at: new Date(),
       output: {
           title: "",

@@ -32,8 +32,11 @@ export async function handler (event, context) {
       const branch_name = event.headers["docs-branch-name"]
       const branch_sha = event.headers["docs-branch-sha"]
       const check_name = event.headers["docs-check-name"]
+      // Set by the docs-hugo CI if the report contains errors
+      const conclusion = ["success", "failure", "neutral"].includes(event.headers["docs-check-conclusion"])
+        ? event.headers["docs-check-conclusion"] : "success"
 
-      await createSummary(octokit, branch_name, check_name, branch_sha, event.body)
+      await createSummary(octokit, branch_name, check_name, branch_sha, event.body, conclusion)
   }
 
     return {

@@ -21,11 +21,13 @@ const createPRComment = jest.fn();
 const getBranchFromPR = jest.fn();
 const getBranchFromPRNumber = jest.fn();
 const parsePRDescription = jest.fn();
+const isOrgMember = jest.fn();
 jest.unstable_mockModule("../pull_request.js", () => ({
   createPRComment,
   getBranchFromPR,
   getBranchFromPRNumber,
   parsePRDescription,
+  isOrgMember,
   parsePRUpstream: jest.fn(),
   createPR: jest.fn(),
   createSummary: jest.fn(),
@@ -54,6 +56,7 @@ describe("ArangoDB docs automation app", () => {
       sha: "cafef00d",
     });
     parsePRDescription.mockResolvedValue({});
+    isOrgMember.mockResolvedValue(false);
 
     probot = new Probot({
       appId: 123,
@@ -118,5 +121,39 @@ describe("ArangoDB docs automation app", () => {
       generators: "examples api-docs",
       "deploy-url": "deploy-preview-7",
     });
+  });
+
+  test("a /generate comment of a non-member doesn't trigger anything", async () => {
+    const payload = structuredClone(issueCommentGeneratePayload);
+    payload.comment.author_association = "CONTRIBUTOR";
+    await probot.receive({ name: "issue_comment", payload });
+
+    expect(isOrgMember).toHaveBeenCalledWith(expect.anything(), payload.comment.user.login);
+    expect(triggerCircleCIPipeline).not.toHaveBeenCalled();
+    expect(createPRComment).toHaveBeenCalledWith(
+      expect.anything(),
+      "arangodb",
+      "docs-hugo",
+      7,
+      "Only members of the arangodb organization can use `/generate`."
+    );
+  });
+
+  test("a /generate comment of a private member (API check) triggers a build", async () => {
+    const payload = structuredClone(issueCommentGeneratePayload);
+    payload.comment.author_association = "CONTRIBUTOR";
+    isOrgMember.mockResolvedValue(true);
+    await probot.receive({ name: "issue_comment", payload });
+
+    expect(triggerCircleCIPipeline).toHaveBeenCalledTimes(1);
+  });
+
+  test("a /generate comment on an issue (not a pull request) is ignored", async () => {
+    const payload = structuredClone(issueCommentGeneratePayload);
+    delete payload.issue.pull_request;
+    await probot.receive({ name: "issue_comment", payload });
+
+    expect(triggerCircleCIPipeline).not.toHaveBeenCalled();
+    expect(createPRComment).not.toHaveBeenCalled();
   });
 });

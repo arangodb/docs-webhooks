@@ -1,5 +1,5 @@
 import { triggerCircleCIPipeline } from './circleci';
-import { createPRComment, getBranchFromPR, parsePRDescription, getBranchFromPRNumber } from './pull_request';
+import { createPRComment, getBranchFromPR, parsePRDescription, getBranchFromPRNumber, isOrgMember } from './pull_request';
 
 export default (app) => {
   app.on(["issue_comment.created"], pullRequestComment);
@@ -39,23 +39,30 @@ export default (app) => {
     console.log("PIPELINE ID " + pipeline_id)
   }
 
+  // Only members of the arangodb organization can trigger the slash commands, as
+  // they run CircleCI workflows (example generation with images isn't approved).
+  // author_association covers public memberships, the API also private ones.
+  async function isAllowed(context) {
+    const association = context.payload.comment.author_association
+    if (association === "OWNER" || association === "MEMBER") return true
+    return await isOrgMember(context.octokit, context.payload.comment.user.login)
+  }
+
   async function pullRequestComment(context) {
     context.log.info("Github Webhook: issue_comment.created")
     const comment = context.payload.comment.body.trim();
-    
-    // const user = context.payload.comment.user.login;
-    // const isAnArangoMember = await context.octokit.rest.request('GET /orgs/arangodb/memberships/'+user, {
-    //   org: 'arangodb',
-    //   username: user,
-    //   headers: {
-    //     'X-GitHub-Api-Version': '2022-11-28'
-    //   }
-    // })
-
-    // console.log("IS ARANGODB")
-    // console.log(isAnArangoMember)
 
     context.log.info("Comment: " + comment)
+
+    if (!["/generate", "/generate-commit", "/commit"].includes(comment)) return
+    // Comments on issues (not pull requests)
+    if (!context.payload.issue.pull_request) return
+
+    if (!(await isAllowed(context))) {
+      context.log.info("[pullRequestComment] Not a member of the arangodb organization: " + context.payload.comment.user.login)
+      await createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number, "Only members of the arangodb organization can use `" + comment + "`.")
+      return
+    }
 
     if (comment == "/generate" || comment == "/generate-commit") {
       const pr_body = context.payload.issue.body;
@@ -72,7 +79,7 @@ export default (app) => {
       const branch_info =  await getBranchFromPRNumber(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number)
       if (branch_info == undefined || branch_info.branch == undefined) {
         app.log.info("[ERROR] [pullRequestComment] branch_info undefined")
-        await createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.pull_request.number, "There was an error triggering checks!")
+        await createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number, "There was an error triggering checks!")
         return
       }
 
@@ -95,7 +102,7 @@ export default (app) => {
       const branch_info =  await getBranchFromPRNumber(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number)
       if (branch_info == undefined || branch_info.branch == undefined) {
         app.log.info("[ERROR] [pullRequestComment] branch_info undefined")
-        await createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.pull_request.number, "There was an error triggering checks!")
+        await createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number, "There was an error triggering checks!")
         return
       }
 

@@ -80,6 +80,21 @@ export async function createPRComment(octokit, owner, repo, pr_number, body) {
   })
 }
 
+// Reacts to a comment, e.g. with "rocket" to acknowledge a command. Failures are
+// only logged, as the reaction is just a convenience.
+export async function addCommentReaction(octokit, owner, repo, comment_id, content) {
+  try {
+    await octokit.rest.reactions.createForIssueComment({
+      owner: owner,
+      repo: repo,
+      comment_id: comment_id,
+      content: content
+    })
+  } catch (e) {
+    console.log("[addCommentReaction] Failed: " + e.message)
+  }
+}
+
 export async function createPR(octokit, head, title, body) {
   console.log("createPR invoked")
   await octokit.rest.pulls.create({

@@ -1,5 +1,6 @@
 import { triggerCircleCIPipeline } from './circleci';
-import { createPRComment, getBranchFromPR, parsePRDescription, getBranchFromPRNumber, isOrgMember } from './pull_request';
+import { createPRComment, getBranchFromPR, parsePRDescription, getBranchFromPRNumber, isOrgMember, addCommentReaction } from './pull_request';
+import { parseCommand } from './commands';
 
 export default (app) => {
   app.on(["issue_comment.created"], pullRequestComment);
@@ -54,17 +55,24 @@ export default (app) => {
 
     context.log.info("Comment: " + comment)
 
-    if (!["/generate", "/generate-commit", "/commit"].includes(comment)) return
+    const parsed = parseCommand(comment)
+    if (parsed == null) return
+    const command = parsed.command
     // Comments on issues (not pull requests)
     if (!context.payload.issue.pull_request) return
 
     if (!(await isAllowed(context))) {
       context.log.info("[pullRequestComment] Not a member of the arangodb organization: " + context.payload.comment.user.login)
-      await createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number, "Only members of the arangodb organization can use `" + comment + "`.")
+      await createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number, "Only members of the arangodb organization can use `" + command + "`.")
       return
     }
 
-    if (comment == "/generate" || comment == "/generate-commit") {
+    if (parsed.error != null) {
+      await createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number, parsed.error)
+      return
+    }
+
+    if (command == "/generate" || command == "/generate-commit") {
       const pr_body = context.payload.issue.body;
       const body_lines = pr_body.match(/[^\r\n]+/g);
 
@@ -72,9 +80,11 @@ export default (app) => {
 
       let ci_params = await parsePRDescription(body_lines, context.octokit);
       ci_params["workflow"] = "generate"
-      ci_params["generators"] = "examples api-docs"
+      ci_params["generators"] = "examples"
       ci_params["deploy-url"] = deploy_preview
-      if (comment == "/generate-commit") ci_params["commit-generated"] = true
+      if (command == "/generate-commit") ci_params["commit-generated"] = true
+      // Arguments of the command (scope, override, generators)
+      Object.assign(ci_params, parsed.params)
 
       const branch_info =  await getBranchFromPRNumber(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number)
       if (branch_info == undefined || branch_info.branch == undefined) {
@@ -89,10 +99,11 @@ export default (app) => {
         await createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number, "There was an error triggering checks!")
         return
       }
+      await addCommentReaction(context.octokit, "arangodb", "docs-hugo", context.payload.comment.id, "rocket")
 
     }
 
-    if (comment == "/commit") {
+    if (command == "/commit") {
       const pr_body = context.payload.issue.body;
       const body_lines = pr_body.match(/[^\r\n]+/g);
 
@@ -112,6 +123,7 @@ export default (app) => {
         await createPRComment(context.octokit, "arangodb", "docs-hugo", context.payload.issue.number, "There was an error triggering checks!")
         return
       }
+      await addCommentReaction(context.octokit, "arangodb", "docs-hugo", context.payload.comment.id, "rocket")
 
     }
   }

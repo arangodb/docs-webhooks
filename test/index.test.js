@@ -22,12 +22,14 @@ const getBranchFromPR = jest.fn();
 const getBranchFromPRNumber = jest.fn();
 const parsePRDescription = jest.fn();
 const isOrgMember = jest.fn();
+const addCommentReaction = jest.fn();
 jest.unstable_mockModule("../pull_request.js", () => ({
   createPRComment,
   getBranchFromPR,
   getBranchFromPRNumber,
   parsePRDescription,
   isOrgMember,
+  addCommentReaction,
   parsePRUpstream: jest.fn(),
   createPR: jest.fn(),
   createSummary: jest.fn(),
@@ -118,9 +120,52 @@ describe("ArangoDB docs automation app", () => {
     );
     expect(triggerCircleCIPipeline).toHaveBeenCalledWith("generate-branch", {
       workflow: "generate",
-      generators: "examples api-docs",
+      generators: "examples",
       "deploy-url": "deploy-preview-7",
     });
+  });
+
+  test("a /generate comment reacts with a rocket when the pipeline was triggered", async () => {
+    await probot.receive({ name: "issue_comment", payload: issueCommentGeneratePayload });
+
+    expect(addCommentReaction).toHaveBeenCalledWith(
+      expect.anything(),
+      "arangodb",
+      "docs-hugo",
+      issueCommentGeneratePayload.comment.id,
+      "rocket"
+    );
+  });
+
+  test("the arguments of /generate-commit are passed as pipeline parameters", async () => {
+    const payload = structuredClone(issueCommentGeneratePayload);
+    payload.comment.body = "/generate-commit scope=changed generators=options,optimizer override=RestVersion";
+    await probot.receive({ name: "issue_comment", payload });
+
+    expect(triggerCircleCIPipeline).toHaveBeenCalledWith("generate-branch", {
+      workflow: "generate",
+      generators: "options optimizer",
+      "deploy-url": "deploy-preview-7",
+      "commit-generated": true,
+      "examples-scope": "changed",
+      override: "RestVersion",
+    });
+  });
+
+  test("invalid arguments are reported in a comment and trigger nothing", async () => {
+    const payload = structuredClone(issueCommentGeneratePayload);
+    payload.comment.body = "/generate scope=everything";
+    await probot.receive({ name: "issue_comment", payload });
+
+    expect(triggerCircleCIPipeline).not.toHaveBeenCalled();
+    expect(addCommentReaction).not.toHaveBeenCalled();
+    expect(createPRComment).toHaveBeenCalledWith(
+      expect.anything(),
+      "arangodb",
+      "docs-hugo",
+      7,
+      expect.stringContaining("Invalid `scope`")
+    );
   });
 
   test("a /generate comment of a non-member doesn't trigger anything", async () => {

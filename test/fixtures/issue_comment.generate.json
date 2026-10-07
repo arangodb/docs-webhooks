@@ -2,13 +2,17 @@
   "action": "created",
   "issue": {
     "number": 7,
-    "body": "Some PR description without any version lines"
+    "body": "Some PR description without any version lines",
+    "pull_request": {
+      "url": "https://api.github.com/repos/arangodb/docs-hugo/pulls/7"
+    }
   },
   "comment": {
     "body": "/generate",
     "user": {
       "login": "contributor"
-    }
+    },
+    "author_association": "MEMBER"
   },
   "repository": {
     "full_name": "arangodb/docs-hugo"

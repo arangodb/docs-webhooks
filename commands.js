@@ -1,6 +1,7 @@
 // PR comment commands, e.g. "/generate-commit scope=changed generators=examples,options"
 
-export const COMMANDS = ["/generate", "/generate-commit", "/commit"];
+// /build starts the plain build of a pull request from a fork (see app.js)
+export const COMMANDS = ["/generate", "/generate-commit", "/commit", "/build"];
 
 // Generators of the toolchain (toolchain/scripts/toolchain.sh in docs-hugo)
 export const GENERATORS = ["examples", "options", "optimizer", "metrics", "error-codes", "exit-codes", "oasisctl"];
@@ -21,8 +22,8 @@ export function parseCommand(body) {
 
   const result = { command, params: {}, error: null };
   const args = words.slice(1);
-  if (args.length > 0 && command === "/commit") {
-    result.error = "`/commit` doesn't accept arguments.";
+  if (args.length > 0 && (command === "/commit" || command === "/build")) {
+    result.error = "`" + command + "` doesn't accept arguments.";
     return result;
   }
 

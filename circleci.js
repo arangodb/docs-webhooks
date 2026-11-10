@@ -9,6 +9,10 @@ export async function triggerCircleCIPipeline(branch, params) {
         body: JSON.stringify({branch: branch, parameters: params}),
     })
     
+    if (!response.ok) {
+        console.log("[triggerCircleCIPipeline] HTTP " + response.status + ": " + await response.text())
+        return undefined
+    }
     const data = await response.json();
     return data.id;
     }

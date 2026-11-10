@@ -17,17 +17,17 @@
     "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest"
   },
   "dependencies": {
-    "body-parser": "latest",
-    "probot": "^14.3.2"
+    "body-parser": "^2.4.0",
+    "probot": "^14.3.7"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",
-    "jest": "^30.4.2",
-    "nock": "^14.0.15",
+    "jest": "^30.5.2",
+    "nock": "^15.0.6",
     "smee-client": "^5.0.0"
   },
   "engines": {
-    "node": ">= 22.0.0"
+    "node": ">= 24.0.0"
   },
   "jest": {
     "testEnvironment": "node"

@@ -30,6 +30,7 @@ jest.unstable_mockModule("../pull_request.js", () => ({
   parsePRDescription,
   isOrgMember,
   addCommentReaction,
+  isForkPR: (pr, owner, repo) => pr.head.repo?.full_name !== owner + "/" + repo,
   parsePRUpstream: jest.fn(),
   createPR: jest.fn(),
   createSummary: jest.fn(),
@@ -37,7 +38,7 @@ jest.unstable_mockModule("../pull_request.js", () => ({
 }));
 
 // Must import the app AFTER registering the module mocks.
-const { default: myProbotApp } = await import("../app.js");
+const { default: myProbotApp, FORK_NOTICE } = await import("../app.js");
 
 const privateKey = readFileSync(
   join(import.meta.dirname, "fixtures/mock-cert.pem"),
@@ -57,7 +58,7 @@ describe("ArangoDB docs automation app", () => {
       branch: "generate-branch",
       sha: "cafef00d",
     });
-    parsePRDescription.mockResolvedValue({});
+    parsePRDescription.mockResolvedValue({ params: {}, errors: [] });
     isOrgMember.mockResolvedValue(false);
 
     probot = new Probot({
@@ -87,19 +88,12 @@ describe("ArangoDB docs automation app", () => {
     expect(triggerCircleCIPipeline).not.toHaveBeenCalled();
   });
 
-  test("opening a PR comments the preview URL and triggers plain-build", async () => {
-    await probot.receive({
-      name: "pull_request",
-      payload: pullRequestOpenedPayload,
-    });
+  test("opening a PR of a member's fork triggers plain-build without commenting yet", async () => {
+    const payload = structuredClone(pullRequestOpenedPayload);
+    payload.pull_request.author_association = "MEMBER";
+    await probot.receive({ name: "pull_request", payload });
 
-    expect(createPRComment).toHaveBeenCalledWith(
-      expect.anything(),
-      "arangodb",
-      "docs-hugo",
-      42,
-      "**Deploy Preview Available Via**<br>https://deploy-preview-42--docs-hugo.netlify.app"
-    );
+    expect(createPRComment).not.toHaveBeenCalled();
     expect(triggerCircleCIPipeline).toHaveBeenCalledWith("pull/42/head", {
       workflow: "plain-build",
       "deploy-url": "deploy-preview-42",
@@ -200,5 +194,102 @@ describe("ArangoDB docs automation app", () => {
 
     expect(triggerCircleCIPipeline).not.toHaveBeenCalled();
     expect(createPRComment).not.toHaveBeenCalled();
+  });
+  describe("pull requests from forks", () => {
+    const forkPayload = (action, association) => {
+      const payload = structuredClone(pullRequestOpenedPayload);
+      payload.action = action;
+      payload.pull_request.author_association = association;
+      payload.pull_request.user = { login: "outsider" };
+      return payload;
+    };
+
+    test("a fork PR of a non-member isn't built, a comment explains /build", async () => {
+      await probot.receive({ name: "pull_request", payload: forkPayload("opened", "CONTRIBUTOR") });
+
+      expect(isOrgMember).toHaveBeenCalledWith(expect.anything(), "outsider");
+      expect(triggerCircleCIPipeline).not.toHaveBeenCalled();
+      expect(createPRComment).toHaveBeenCalledWith(expect.anything(), "arangodb", "docs-hugo", 42, FORK_NOTICE);
+    });
+
+    test("new commits of a non-member's fork PR aren't built and not commented", async () => {
+      await probot.receive({ name: "pull_request", payload: forkPayload("synchronize", "NONE") });
+
+      expect(triggerCircleCIPipeline).not.toHaveBeenCalled();
+      expect(createPRComment).not.toHaveBeenCalled();
+    });
+
+    test("a fork PR of a private member (API check) is built", async () => {
+      isOrgMember.mockResolvedValue(true);
+      await probot.receive({ name: "pull_request", payload: forkPayload("synchronize", "CONTRIBUTOR") });
+
+      expect(triggerCircleCIPipeline).toHaveBeenCalledWith("pull/42/head", {
+        workflow: "plain-build",
+        "deploy-url": "deploy-preview-42",
+      });
+    });
+
+    test("a PR of a branch of the repository is built without membership check", async () => {
+      const payload = forkPayload("synchronize", "NONE");
+      payload.pull_request.head.repo.full_name = "arangodb/docs-hugo";
+      getBranchFromPR.mockResolvedValue({ branch: "feature-branch", sha: "deadbeef" });
+      await probot.receive({ name: "pull_request", payload });
+
+      expect(isOrgMember).not.toHaveBeenCalled();
+      expect(triggerCircleCIPipeline).toHaveBeenCalledWith("feature-branch", {
+        workflow: "plain-build",
+        "deploy-url": "deploy-preview-42",
+      });
+    });
+
+    test("a /build comment of a member triggers a plain build", async () => {
+      const payload = structuredClone(issueCommentGeneratePayload);
+      payload.comment.body = "/build";
+      getBranchFromPRNumber.mockResolvedValue({ branch: "pull/7/head", sha: "cafef00d", fork: true });
+      await probot.receive({ name: "issue_comment", payload });
+
+      expect(triggerCircleCIPipeline).toHaveBeenCalledWith("pull/7/head", {
+        workflow: "plain-build",
+        "deploy-url": "deploy-preview-7",
+      });
+      expect(addCommentReaction).toHaveBeenCalled();
+    });
+
+    test("a /build comment of a non-member doesn't trigger anything", async () => {
+      const payload = structuredClone(issueCommentGeneratePayload);
+      payload.comment.body = "/build";
+      payload.comment.author_association = "CONTRIBUTOR";
+      await probot.receive({ name: "issue_comment", payload });
+
+      expect(triggerCircleCIPipeline).not.toHaveBeenCalled();
+    });
+  });
+
+  test("invalid upstream references are reported in a comment and trigger nothing", async () => {
+    parsePRDescription.mockResolvedValue({ params: {}, errors: ["Invalid upstream reference for 3.12: `x$(id)`"] });
+    await probot.receive({ name: "issue_comment", payload: issueCommentGeneratePayload });
+
+    expect(triggerCircleCIPipeline).not.toHaveBeenCalled();
+    expect(createPRComment).toHaveBeenCalledWith(
+      expect.anything(), "arangodb", "docs-hugo", 7, expect.stringContaining("Invalid upstream reference for 3.12")
+    );
+  });
+
+  test("a /generate comment works with an empty PR description", async () => {
+    const payload = structuredClone(issueCommentGeneratePayload);
+    payload.issue.body = null;
+    await probot.receive({ name: "issue_comment", payload });
+
+    expect(parsePRDescription).toHaveBeenCalledWith([], expect.anything());
+    expect(triggerCircleCIPipeline).toHaveBeenCalledTimes(1);
+  });
+
+  test("a /commit comment triggers commit-generated without upstream references", async () => {
+    const payload = structuredClone(issueCommentGeneratePayload);
+    payload.comment.body = "/commit";
+    await probot.receive({ name: "issue_comment", payload });
+
+    expect(parsePRDescription).not.toHaveBeenCalled();
+    expect(triggerCircleCIPipeline).toHaveBeenCalledWith("generate-branch", { workflow: "commit-generated" });
   });
 });

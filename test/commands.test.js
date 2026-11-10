@@ -10,6 +10,7 @@ describe("parseCommand", () => {
   test("parses commands without arguments", () => {
     expect(parseCommand("  /generate \n")).toEqual({ command: "/generate", params: {}, error: null });
     expect(parseCommand("/commit")).toEqual({ command: "/commit", params: {}, error: null });
+    expect(parseCommand("/build")).toEqual({ command: "/build", params: {}, error: null });
   });
 
   test("maps the arguments to pipeline parameters", () => {
@@ -36,6 +37,7 @@ describe("parseCommand", () => {
     ["/generate please", "expected `key=value`"],
     ["/generate version=4.x", "Unknown argument `version`"],
     ["/commit scope=changed", "doesn't accept arguments"],
+    ["/build scope=changed", "`/build` doesn't accept arguments"],
   ])("rejects %s", (comment, message) => {
     expect(parseCommand(comment).error).toContain(message);
   });

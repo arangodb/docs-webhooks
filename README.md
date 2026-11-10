@@ -189,10 +189,17 @@ that isn't deprecated within the next two months. Otherwise, it silently falls
 back to a default version
 ([Netlify docs](https://docs.netlify.com/build/functions/optional-configuration/)).
 
-The version is set in the `.nvmrc` file (major version only, e.g. `24`), which
-takes precedence over the setting in the Netlify UI (**Project configuration** >
-**Developer settings** > **Continuous deployment** > **Dependency management**).
-Keep `engines` in `package.json` in sync with it. Netlify doesn't use `engines`,
+The version is set in the `.nvmrc` file (major version only, e.g. `24`). It
+takes precedence over the Node.js version in the Netlify UI under
+**Project configuration** > **Developer settings** > **Dependency management**:
+<https://app.netlify.com/projects/candid-daffodil-f96315/configuration/developer-settings#dependency-management>
+
+Set the version in the UI to the same version anyway, so that it doesn't
+cause any confusion. It was set to 16.x for a long time. Since the Lambda
+runtime of Node.js 16 is deprecated, the functions ran on Netlify's fallback
+version rather than on 16.
+
+Keep `engines` in `package.json` in sync, too. Netlify doesn't use `engines`,
 it only tells developers which version is required.
 
 To update to a new major version:
@@ -202,10 +209,13 @@ To update to a new major version:
    Lambda supports as a regular runtime, not as a preview, and that isn't
    deprecated soon. Lambda deprecates runtimes when the Node.js version reaches
    its end of life.
-2. Update `.nvmrc` and `engines` in `package.json`.
+2. Update `.nvmrc`, `engines` in `package.json`, and the Node.js version in
+   the Netlify UI (see above).
 3. Install the version locally and run the tests.
-4. Push the changes and check the deploy log for the Node.js version that is used.
-   Then check that the app still reacts in a docs-hugo PR.
+4. Push the changes and check the deploy log for the Node.js version that is
+   used. It's in the **Initializing** step, e.g.
+   `Now using node v24.22.2 (npm v11.19.1)`. Then check that the app still
+   reacts in a docs-hugo PR.
 
 Check the Node.js version about once a year, before the end of life of the
 current version (end of April for even-numbered versions).
